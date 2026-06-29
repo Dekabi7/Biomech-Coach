@@ -1,0 +1,23 @@
+# Python
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+backend/.env
+mobile/.env
+
+# Node
+mobile/node_modules/
+mobile/.expo/
+
+# Videos and data
+*.mp4
+*.mov
+*.avi
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm view react versions --json 2>$null | ConvertFrom-Json | Where-Object { $_ -match \"^18\\\\.\" } | Select-Object -Last 5)",
+      "PowerShell(npm view react dist-tags --json 2>$null)",
+      "PowerShell(npm view react-native dist-tags --json 2>$null)",
+      "PowerShell(npm view react-native-worklets versions --json 2>$null | ConvertFrom-Json | Where-Object { $_ -match \"^0\\\\.[5-8]\\\\.\" } | Select-Object -Last 5)",
+      "Bash(cp \"c:/Users/noahd/Downloads/Biomech Coach/mobile/app/\\(tabs\\)/analysis.tsx\" \"c:/Users/noahd/Downloads/Biomech Coach/mobile/app/analysis/[sessionId].tsx\")",
+      "Bash(cp \"c:/Users/noahd/Downloads/Biomech Coach/mobile/app/\\(tabs\\)/feedback.tsx\" \"c:/Users/noahd/Downloads/Biomech Coach/mobile/app/feedback/[sessionId].tsx\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

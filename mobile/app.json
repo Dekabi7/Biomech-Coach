@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "BiomechCoach",
+    "slug": "biomechcoach",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "splash": {
+      "backgroundColor": "#0D0D0D"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.biomechcoach.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "BiomechCoach needs access to your photo library to analyse your tennis videos.",
+        "NSCameraUsageDescription": "BiomechCoach needs camera access for live swing analysis.",
+        "NSMicrophoneUsageDescription": "Required for video recording."
+      }
+    },
+    "android": {
+      "package": "com.biomechcoach.app",
+      "permissions": ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "CAMERA"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-av",
+      [
+        "expo-image-picker",
+        { "photosPermission": "BiomechCoach needs your photo library to analyse tennis videos." }
+      ]
+    ],
+    "scheme": "biomechcoach",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

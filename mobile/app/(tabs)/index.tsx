@@ -131,7 +131,7 @@ export default function UploadScreen() {
           <Text style={styles.dropMain}>
             {videoName ?? 'No video selected'}
           </Text>
-          <Text style={styles.dropSub}>MP4 or MOV · max 200 MB</Text>
+          <Text style={styles.dropSub}>MP4 or MOV · 15 to 30 seconds · max 200 MB</Text>
 
           <View style={styles.pickerRow}>
             <TouchableOpacity style={styles.pickerBtn} onPress={pickFromCameraRoll}>

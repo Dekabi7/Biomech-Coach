@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, memo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Dimensions, PanResponder,
@@ -38,9 +38,9 @@ const IDEAL_LANDMARKS: Record<string, { x: number; y: number }> = {
 };
 
 const SPEEDS = [
-  { label: '0.25×', value: 0.25 },
-  { label: '0.5×',  value: 0.5  },
-  { label: '1×',    value: 1.0  },
+  { label: '0.25x', value: 0.25 },
+  { label: '0.5x',  value: 0.5  },
+  { label: '1x',    value: 1.0  },
 ];
 
 function peakFrame(frames: Record<string, { x: number; y: number }>[]) {
@@ -54,6 +54,52 @@ function formatTime(ms: number) {
   return `${s}.${dec}s`;
 }
 
+// Defined outside component so it never remounts on state changes
+interface VideoPanelProps {
+  videoUrl: string;
+  landmarks: Record<string, { x: number; y: number }>;
+  width: number;
+  height: number;
+  videoRef: React.RefObject<Video>;
+  onPlaybackUpdate: (status: AVPlaybackStatus) => void;
+}
+
+const VideoPanel = memo(({ videoUrl, landmarks, width, height, videoRef, onPlaybackUpdate }: VideoPanelProps) => (
+  <View style={{ width, height, backgroundColor: Colors.card, borderRadius: 10, overflow: 'hidden' }}>
+    <Video
+      ref={videoRef}
+      source={{ uri: videoUrl }}
+      style={{ width, height }}
+      resizeMode={ResizeMode.COVER}
+      shouldPlay
+      isLooping
+      isMuted
+      onPlaybackStatusUpdate={onPlaybackUpdate}
+    />
+    {Object.keys(landmarks).length > 0 && (
+      <SkeletonOverlay
+        landmarks={landmarks}
+        width={width}
+        height={height}
+        color={Colors.orange}
+        showProblems
+      />
+    )}
+  </View>
+));
+
+const IdealPanel = memo(({ width, height }: { width: number; height: number }) => (
+  <View style={{ width, height, backgroundColor: Colors.card, borderRadius: 10, overflow: 'hidden' }}>
+    <SkeletonOverlay
+      landmarks={IDEAL_LANDMARKS}
+      width={width}
+      height={height}
+      color={Colors.gray}
+      showProblems={false}
+    />
+  </View>
+));
+
 export default function AnalysisScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const router = useRouter();
@@ -61,13 +107,11 @@ export default function AnalysisScreen() {
   const [polling, setPolling] = useState(true);
   const [tab, setTab] = useState<Tab>('your_form');
 
-  // Playback state
   const videoRef = useRef<Video>(null);
   const [speed, setSpeed] = useState(1.0);
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
   const isSeeking = useRef(false);
-
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -112,21 +156,14 @@ export default function AnalysisScreen() {
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e) => {
-        isSeeking.current = true;
-        seekTo(e.nativeEvent.locationX);
-      },
-      onPanResponderMove: (e) => {
-        seekTo(e.nativeEvent.locationX);
-      },
-      onPanResponderRelease: () => {
-        isSeeking.current = false;
-      },
+      onPanResponderGrant: (e) => { isSeeking.current = true; seekTo(e.nativeEvent.locationX); },
+      onPanResponderMove: (e) => { seekTo(e.nativeEvent.locationX); },
+      onPanResponderRelease: () => { isSeeking.current = false; },
     })
   ).current;
 
   const frames = session?.landmarks_data as Record<string, { x: number; y: number }>[] | undefined;
-  const contactFrame = frames ? peakFrame(frames) : undefined;
+  const contactFrame = frames ? peakFrame(frames) : {};
   const shotLabel = session
     ? session.shot_type.charAt(0).toUpperCase() + session.shot_type.slice(1)
     : '';
@@ -135,67 +172,24 @@ export default function AnalysisScreen() {
   const panelW = tab === 'compare' ? (SCREEN_W - 40) / 2 : SCREEN_W - 32;
   const progressPct = durationMs > 0 ? positionMs / durationMs : 0;
 
-  function VideoPanel({ width, height }: { width: number; height: number }) {
-    return (
-      <View style={{ width, height, backgroundColor: Colors.card, borderRadius: 10, overflow: 'hidden' }}>
-        {session?.video_url && (
-          <Video
-            ref={videoRef}
-            source={{ uri: session.video_url }}
-            style={{ width, height }}
-            resizeMode={ResizeMode.COVER}
-            shouldPlay
-            isLooping
-            isMuted
-            onPlaybackStatusUpdate={onPlaybackUpdate}
-          />
-        )}
-        {contactFrame && Object.keys(contactFrame).length > 0 && (
-          <SkeletonOverlay
-            landmarks={contactFrame}
-            width={width}
-            height={height}
-            color={Colors.orange}
-            showProblems
-          />
-        )}
-      </View>
-    );
-  }
-
-  function IdealPanel({ width, height }: { width: number; height: number }) {
-    return (
-      <View style={{ width, height, backgroundColor: Colors.card, borderRadius: 10, overflow: 'hidden' }}>
-        <SkeletonOverlay
-          landmarks={IDEAL_LANDMARKS}
-          width={width}
-          height={height}
-          color={Colors.gray}
-          showProblems={false}
-        />
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-          <Text style={styles.back}>← Back</Text>
+          <Text style={styles.back}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>{session ? `${shotLabel} analysis` : 'Analysing…'}</Text>
+        <Text style={styles.title}>{session ? `${shotLabel} analysis` : 'Analysing...'}</Text>
         <Text style={styles.baseline}>vs USTA 4.0+</Text>
       </View>
 
       {polling ? (
         <View style={styles.loading}>
           <ActivityIndicator size="large" color={Colors.orange} />
-          <Text style={styles.loadingText}>Running CV pipeline…</Text>
-          <Text style={styles.loadingSubText}>MediaPipe is extracting your pose — 15–30 s</Text>
+          <Text style={styles.loadingText}>Running CV pipeline...</Text>
+          <Text style={styles.loadingSubText}>MediaPipe is extracting your pose. Usually 15 to 30 seconds.</Text>
         </View>
       ) : session ? (
         <ScrollView>
-          {/* Tab selector */}
           <View style={styles.tabBar}>
             {(['your_form', 'ideal_form', 'compare'] as Tab[]).map(t => (
               <TouchableOpacity
@@ -210,38 +204,30 @@ export default function AnalysisScreen() {
             ))}
           </View>
 
-          {/* Video panels */}
           <View style={styles.panelRow}>
-            {tab === 'your_form' && (
+            {(tab === 'your_form' || tab === 'compare') && session.video_url && (
               <View>
-                <Text style={styles.panelLabel}>Your swing</Text>
-                <VideoPanel width={panelW} height={PANEL_H} />
+                {tab === 'your_form' && <Text style={styles.panelLabel}>Your swing</Text>}
+                <VideoPanel
+                  videoUrl={session.video_url}
+                  landmarks={contactFrame}
+                  width={panelW}
+                  height={PANEL_H}
+                  videoRef={videoRef}
+                  onPlaybackUpdate={onPlaybackUpdate}
+                />
               </View>
             )}
-            {tab === 'ideal_form' && (
+            {(tab === 'ideal_form' || tab === 'compare') && (
               <View>
-                <Text style={styles.panelLabel}>Elite baseline</Text>
+                {tab === 'ideal_form' && <Text style={styles.panelLabel}>Elite baseline</Text>}
                 <IdealPanel width={panelW} height={PANEL_H} />
               </View>
             )}
-            {tab === 'compare' && (
-              <>
-                <View>
-                  <Text style={styles.panelLabel}>Your swing</Text>
-                  <VideoPanel width={panelW} height={PANEL_H} />
-                </View>
-                <View>
-                  <Text style={styles.panelLabel}>Elite baseline</Text>
-                  <IdealPanel width={panelW} height={PANEL_H} />
-                </View>
-              </>
-            )}
           </View>
 
-          {/* Playback controls — only shown on Your Form and Compare tabs */}
           {showControls && (
             <View style={styles.controls}>
-              {/* Speed buttons */}
               <View style={styles.speedRow}>
                 <Text style={styles.speedLabel}>Speed</Text>
                 {SPEEDS.map(s => (
@@ -259,8 +245,6 @@ export default function AnalysisScreen() {
                   {formatTime(positionMs)} / {formatTime(durationMs)}
                 </Text>
               </View>
-
-              {/* Scrub bar */}
               <View style={styles.scrubTrack} {...scrubPan.panHandlers}>
                 <View style={[styles.scrubFill, { width: `${progressPct * 100}%` as any }]} />
                 <View style={[styles.scrubThumb, { left: `${progressPct * 100}%` as any }]} />
@@ -268,7 +252,6 @@ export default function AnalysisScreen() {
             </View>
           )}
 
-          {/* Metric cards */}
           <View style={styles.metricsGrid}>
             {METRIC_LABELS.map(({ key, label, unit }) => {
               const val = (session[key] as number) ?? 0;
@@ -281,7 +264,6 @@ export default function AnalysisScreen() {
             })}
           </View>
 
-          {/* Scores */}
           <View style={styles.scoreSection}>
             <View style={styles.scoreRow}>
               <Text style={styles.scoreLabel}>Overall score</Text>
@@ -303,14 +285,14 @@ export default function AnalysisScreen() {
             style={styles.feedbackBtn}
             onPress={() => router.push(`/feedback/${sessionId}` as any)}
           >
-            <Text style={styles.feedbackBtnText}>View Rally feedback →</Text>
+            <Text style={styles.feedbackBtnText}>View Rally feedback</Text>
           </TouchableOpacity>
         </ScrollView>
       ) : (
         <View style={styles.loading}>
           <Text style={styles.loadingText}>Analysis failed. Please try again.</Text>
           <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
-            <Text style={{ color: Colors.orange }}>← Go back</Text>
+            <Text style={{ color: Colors.orange }}>Go back</Text>
           </TouchableOpacity>
         </View>
       )}

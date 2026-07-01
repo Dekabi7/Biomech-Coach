@@ -8,7 +8,9 @@
       "Bash(cp \"c:/Users/noahd/Downloads/Biomech Coach/mobile/app/\\(tabs\\)/analysis.tsx\" \"c:/Users/noahd/Downloads/Biomech Coach/mobile/app/analysis/[sessionId].tsx\")",
       "Bash(cp \"c:/Users/noahd/Downloads/Biomech Coach/mobile/app/\\(tabs\\)/feedback.tsx\" \"c:/Users/noahd/Downloads/Biomech Coach/mobile/app/feedback/[sessionId].tsx\")",
       "PowerShell(Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue)",
-      "PowerShell(Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue)",
+      "PowerShell(gh auth status 2>&1)",
+      "PowerShell(cd \"c:\\\\Users\\\\noahd\\\\Downloads\\\\Biomech Coach\"; git add mobile/app/analysis/[sessionId].tsx mobile/app/\\(tabs\\)/index.tsx; git commit -m \"Fix video remounting glitch, add length guidance to upload screen\"; git push origin main 2>&1 | Select-Object -Last 4)"
     ]
   }
 }
